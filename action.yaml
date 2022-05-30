@@ -1,0 +1,41 @@
+---
+name: Get CKAN package
+description: |
+  Get package resources from a remote CKAN server.
+
+branding:
+  icon: download-cloud
+  color: green
+
+inputs:
+  url:
+    description: |
+      The CKAN server URL.
+      Do not include the API path (`/api`).
+    required: true
+  package_id:
+    description: The CKAN package ID.
+    required: true
+  output_dir:
+    description: Get files to this directory.
+    required: false
+    default: .
+  resource_ids:
+    description: |
+      Only download the resources with these IDs.
+      If not specified, download all resources in the package.
+      This input is a JSON array.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Get package metadata
+      run: |
+        ${{github.action_path}}/bin/get-package "${{inputs.url}}" "${{inputs.package_id}}" "${{inputs.output_dir}}"
+      shell: bash
+
+    - name: Get resources
+      run: |
+        ${{github.action_path}}/bin/get-resources "${{inputs.output_dir}}/${{inputs.package_id}}.json" "${{inputs.output_dir}}" '${{inputs.resource_ids}}'
+      shell: bash

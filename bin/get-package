@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+URL="${1:?URL}"
+PACKAGE_ID="${2:?PACKAGE_ID}"
+OUTPUT_DIR="${3:?OUTPUT_DIR}"
+FILENAME="${OUTPUT_DIR}/${PACKAGE_ID}.json"
+
+printf '==> Downloading package metadata: id=%s\n' "${PACKAGE_ID}"
+mkdir -p "${OUTPUT_DIR}"
+curl --fail --location --show-error --silent "${URL}/api/3/action/package_show?id=${PACKAGE_ID}" | jq '.result' >"${FILENAME}"
+printf '==> Downloaded package metadata: id=%s path=%s\n' "${PACKAGE_ID}" "${FILENAME}"

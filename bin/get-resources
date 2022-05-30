@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+PACKAGE="${1:?PACKAGE}"
+OUTPUT_DIR="${2:?OUTPUT_DIR}"
+RESOURCE_IDS="${3:-}"
+
+PACKAGE_ID="$(jq --raw-output '.id' "${PACKAGE}")"
+TEMPFILE="$(mktemp)"
+
+if [[ -n $RESOURCE_IDS ]]; then
+  jq --argjson ids "${RESOURCE_IDS}" --compact-output '.resources[] | select(.id as $id | $ids | index($id)) | {id, name, url}' "${PACKAGE}" >"${TEMPFILE}"
+else
+  jq --compact-output '.resources[] | {id, name, url}' "${PACKAGE}" >"${TEMPFILE}"
+fi
+
+printf '==> Downloading package resources: id=%s\n' "${PACKAGE_ID}"
+while read -r resource; do
+  id="$(jq --raw-output '.id' <<<"${resource}")"
+  name="$(jq --raw-output '.name' <<<"${resource}")"
+  url="$(jq --raw-output '.url' <<<"${resource}")"
+  printf '==> Downloading package resource: id=%s name=%s\n' "${id}" "${name}"
+  curl --fail --location --output "${OUTPUT_DIR}/${name}" --show-error --silent "${url}"
+  printf '==> Downloaded package resource: id=%s name=%s\n' "${id}" "${name}"
+done <"${TEMPFILE}"
+printf '==> Downloaded package resources: id=%s\n' "${PACKAGE_ID}"
